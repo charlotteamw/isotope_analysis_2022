@@ -1,0 +1,447 @@
+---
+title: "SGSIE4 - Data Practical 1-4"
+author: "Brian Hayden"
+date: '2021-04-12'
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown to load and plot data
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+We'll use this to compile and store all the r code used during the workshop. This way you can edit and improve the scripts as you go on and even copy relevant sections for other projects. This markdown is being saved as a html document but you can also open the markdown directly
+
+Now we need to install and load the packages we will be using during the workshop. You can use the Packages wizard in R studio to install each of these and then load them all using this chuck of code:
+
+
+
+```{r}
+
+library(ggplot2)
+library(reshape2)
+library(plyr)
+```
+
+## Preliminary data interrogation
+
+Here we will load in an isotope dataset and have a look for outliers and issues we need to be concerned about.
+
+First load the data associated with this workshop (the file is named *prelim* because we will be adding to it as we work)
+This file contains carbon and nitrogen data for the entire food web of two lakes in northern Finland. The data are taken from this paper http://onlinelibrary.wiley.com/doi/10.1890/13-0264.1/abstract 
+
+Your data should already have been tidied up, probably in Excel, so as to remove any of the additional lines at the start that often come back from analytical laboratories. As with all data files, your first line (row) should be the names of each of the columns. When naming columns, it is important to not use any unusual, non-standard characters, as these can confuse the functions that are parsing (reading and processing) the datafile: if you need to separate words in a column header you should use "_" or ".", e.g. "delta_C" or "delta.C" but not "delta/C".
+
+```{r}
+
+#Load your data
+data<-read.csv("prelim.csv")
+
+
+#View the first 10 rows of data
+head(data)
+
+
+```
+
+It is not so easy to get summary statistics on each Taxonomic group within our dataset using the basic R functions. There are many packages out there to help, but Hadley Wickham's suite of packages are impossible to beat in my opinion, and we will be using his `ggplot2` package for pretty graphs later on so lets stick with the "Hadleyverse" of functions.
+
+```{r}
+
+data.sum<-ddply(data, c("Lake", "Species"), summarise,
+          count = length(Species),
+          mC = mean(d13C), sdC = sd(d13C), 
+          mN = mean(d15N), sdN = sd(d15N))
+
+data.sum<-ddply(data, c("Lake"), summarise,
+          count = length(Species),
+          mC = mean(d13C), sdC = sd(d13C), 
+          mN = mean(d15N), sdN = sd(d15N))
+
+
+
+fish<-subset(data, Class == "Fish")
+
+fish.sum<-ddply(fish, c("Lake", "Species"), summarise,
+          count = length(Species),
+          mC = mean(d13C), sdC = sd(d13C), 
+          mN = mean(d15N), sdN = round(sd(d15N), digits=1))
+
+fish.sum
+
+```
+
+
+
+There is quite a bit here but we will use a subset for this demonstration. Here we are just looking at perch from L. Kivi.
+
+```{r}
+Perch<-subset(data, Species == "perch" & Lake == "Kivi")
+head(Perch)
+
+```
+
+
+## Basic Visualisation
+
+Visualising the data is often the next step. You can generate histograms of the data very easily.Lets compare isotope ratios between species. Here we are primarily interested in perch and whitefish
+
+```{r}
+new.data<-subset(data, Species == "perch" | Species == "lsr")
+
+
+ggplot(new.data, aes(x=Species, group = Species, y=d13C, colour=Species)) +                 
+  geom_boxplot() +
+  geom_point(position="jitter")+
+  facet_grid(. ~ Lake)
+
+ggsave("plot1.pdf")
+
+
+
+```
+
+What about the other variables... 15N, C/N etc
+
+
+```{r}
+
+melt.data<-melt(new.data, id.vars = c(1:6,9,10))
+
+melt.boxplot<-ggplot(melt.data, aes(x=Species, group = Species, y=value, colour=Species, fill=Species)) +
+                  geom_boxplot(alpha=0.3, outlier.shape = NA) +
+                  geom_point(position="jitter") +
+                  facet_grid(variable ~ Lake, scales = "free_y") +
+                  theme_bw()
+melt.boxplot
+
+```
+
+
+*Inorganic Carbon*
+First we want to test whether there is evidence for an effect of inorganic carbon on the carbon isotope values. If this was a factor we would expect to see a positive relationship between %C and d13C. Why?
+
+```{r}
+
+carbonate.plot<-ggplot(new.data, aes(x=X.C, y=d13C)) +
+                  geom_point() +
+                  geom_smooth(method = "lm", se=T,formula=y~x) +
+                  facet_grid(Species ~ Lake, scales = "free_x")
+carbonate.plot
+
+
+```
+
+There is no strong evidence of inorganic C in these samples, so we can continue. 
+
+
+*Lipid effect*
+Lipids contain carbon but no nitrogen AND are 13C depleted relative to protein (i.e. muscle). So, lipid rich samples will be depleted in 13C, in extreme cases this may bias our interpretation of their position in the food web. 
+
+Pure protein has an elemental C:N ratio of 3 (2.8 - 3.2), C:N values above this are indicative of lipids in the matrix. There are two otpions to deal with this: you can remove lipids from the sample using repeated washes in a 2:1 chloroform:methanol solution or using a lipid correction model.
+
+
+We can look at this relationship in two ways. First lets test whether there is a relationship between C:N and d13C in our samples. What relationship would we expect if lipid was having an effect on the d13C values of the fish?
+
+```{r}
+
+lipid.plot<-ggplot(new.data, aes(x=C.N, y=d13C)) +
+                  geom_point() +
+                  geom_smooth(method = "lm", se=T,formula=y~x) +
+                  facet_grid(Species ~ Lake)
+lipid.plot
+
+```
+
+
+Alternatively we can identify whether any individuals / populations have C:N values baove the 3.5 threshold
+
+
+```{r}
+
+
+lipid.boxplot<-ggplot(subset(data, Class == "Fish"), aes(x=Species, group = Species, y=C.N, colour=Species)) +
+          geom_boxplot() +
+          geom_point(position="jitter")+
+          ylim(3,5) +
+          geom_hline(aes(yintercept=4), colour="red") +
+          facet_grid(. ~ Lake) +
+          theme_bw()
+lipid.boxplot 
+
+
+```
+
+C:N value are mostly below 4 so it is unlikely that lipids will influence the d13C values of most species. However,there does seem ot be a differnce between lakes. It is good practice to arothmetically correct d13C values anyway. I regualrly use the lipid nomalising model reported in Kijunen et al http://onlinelibrary.wiley.com/doi/10.1111/j.1365-2664.2006.01224.x/full but there are plenty of others. A note of caution, these models dont perform well for liver, invertebrates or extremely lipid rich tissues (C:N > 5). In these cases, it is advisable to remove lipids using a chloroform-methanol wash. 
+The script below adds an additonal column containing the lipid corrected d13C values to the existing table
+
+```{r}
+
+
+data$d13Ccorr<-round(data$d13C+7.018*(0.048+3.9/(1+287/(93/(1+(0.246*data$C.N-0.775) ^ -1)))), digits=1)
+head(data)
+
+```
+
+
+What effect does this have on the data?
+
+```{r}
+
+lipid.effect<-ggplot(subset(data, Class == "Fish"), aes(x=d13C, y=d13Ccorr, colour=Lake, size = C.N))+
+          geom_point() +
+          geom_abline() +
+          theme_bw()
+lipid.effect
+
+```
+
+All the datapoints have shifted but there is a greater effect in L. Vuotnis corresponding to the higher C:N values in those fish.
+
+
+We went through these comparisons individually here, but you can use pairs plopts to summarise much of this information. As ever, there is a 'Hadleyverse' option, ggpairs, in the GGally package. These are coarse plots but an excellent way to take a first look at your data.
+
+```{r}
+
+library(GGally)
+ggpairs(new.data[,c(7:11)])
+
+
+```
+
+
+
+
+
+
+## Stable isotope biplot
+Once we are happy that our data are robust we can move on to some preliminary plots and interrogation. The standard way to view isotope data is though a biplot with a source isotope (carbon, hydrogen or sulphur) on the x-axis and nitrogen on the y-axis. In this instance we are plotting carbon and nitrogen data for various fish and invertebrates.
+
+```{r}
+biplots<-ggplot(data, aes(x = d13C, y = d15N, colour = Group, shape = Class)) +
+  geom_point(alpha = 0.7, size=2) +
+  facet_grid(. ~ Lake) +
+  theme_bw() +
+  ylab(expression(paste(delta^{15}, "N (\u2030)"))) +
+  xlab(expression(paste(delta^{13}, "C (\u2030)")))
+biplots
+
+ggsave("biplots.pdf")
+
+```
+
+Quiz time!* There is a lot of variability in the BMI datapoints, why is that? 
+
+*Clue* This dataset contaion BMI sampled along a depth gradient form the shoreline to the deepest point in both lakes. Does this affect BMI isotope ratios, if so, why? Lets look at the relationship in both lakes
+
+```{r}
+bmi.c<-ggplot(subset(data, Group == "BMI"), aes(x=d13C, y=-Depth)) +
+                  geom_point() +
+                  geom_smooth(method = 'loess', formula = y ~ x) +
+                  facet_grid(. ~ Lake) +
+                  xlab(expression(delta^{13}~C)) +
+                  theme_bw()
+bmi.c
+
+
+bmi.n<-ggplot(subset(data, Group == "BMI"), aes(x=d15N, y=-Depth)) +
+                  geom_point() +
+                  geom_smooth(method = 'loess', formula = y ~ x) +
+                  facet_grid(. ~ Lake) +
+                  xlab(expression(delta^{15}~N)) +
+                  theme_bw()
+bmi.n
+
+```
+
+There is a depletion in d13C and enrichment in d15N with depth in each lake, why?
+
+Finally lets look at a summary biplot for both lakes
+
+```{r}
+
+data.sum<-ddply(data, c("Lake", "Class", "Group"), summarise,
+                d13Cmn=mean(d13C), #mean
+                d13Csd=sd(d13C),#standard deviation
+                d13Cse=sd(d13C)/sqrt(length(d13C)), #standard error
+                d15Nmn=mean(d15N),
+                d15Nsd=sd(d15N),
+                d13Cse=sd(d15N)/sqrt(length(d15N)))
+
+Ylims <- aes(ymax = d15Nmn + d15Nsd, ymin=d15Nmn - d15Nsd)
+Xlims <- aes(xmax = d13Cmn + d13Csd, xmin=d13Cmn - d13Csd)
+
+
+
+sum.biplot<-ggplot(data.sum, aes(x=d13Cmn, y=d15Nmn, colour=Group, shape =Class)) + 
+  geom_point(size=3) + 
+  geom_errorbar(Ylims, width=0.2) + 
+  geom_errorbarh(Xlims, height=0.2) +
+  ylab(expression(delta^{15}~N)) +
+  xlab(expression(delta^{13}~C)) +
+  facet_grid(. ~ Lake)+
+  theme_bw()
+sum.biplot
+
+
+```
+
+**Quiz time!** What is the main difference between these lakes?
+
+
+*Perch and whitefish*
+
+The initial question in study was whether perch and whitefish used different resources (i.e. had different isotope ratios) in these lakes. Do they?
+
+Lets start with a biplot to visualise the difference
+
+
+```{r}
+
+species.biplot<-ggplot(subset(data, Species == "lsr" | Species == "perch"), aes(x=d13Ccorr, y=d15N, colour = Species)) +
+                  geom_point() +
+                  stat_ellipse() +
+                  facet_grid(. ~ Lake)+
+  theme_bw()
+species.biplot
+
+```
+
+
+
+
+**Demo 2 - Basic mixing model**
+
+
+
+We can see that the species have different isotope ratios but what does this mean? To infer trophic ecology from 'raw' isotope data. 
+
+The first step is to idenitfy the baseline values. Here we will use zooplankton and pooled littoral BMI as pealgic and littoral enmembers respectively.
+
+```{r}
+endmembers.sum<-ddply(data, c("Lake", "Group", "Depth"), summarise,
+                d13Cmn=mean(d13C),
+                d13Csd=sd(d13C),
+                d15Nmn=mean(d15N),
+                d15Nsd=sd(d15N))
+
+ZPL<-subset(endmembers.sum, Group == "ZPL")
+
+BMI<-subset(endmembers.sum, Group == "BMI" & Depth == "1")
+
+Lake<-c("Kivi", "Vuontis")
+d13Cpel<-c(-31.2, -28.7)
+d15Npel<-c(3.1, 5.1)
+d13Clit<-c(-23.9, -16.0)
+d15Nlit<-c(3.3, 2.7)
+endmembers<-data.frame(Lake, d13Cpel, d15Npel, d13Clit, d15Nlit)
+mm.data<-merge(data, endmembers, by = "Lake")
+head(mm.data)
+
+
+
+```
+
+We now have a data frame where each row contains the d13C and d15N values of a specific consumer, in addition to pelagic and littoral baseline values for the relevant lake. We can use a 2 source mixing model to derive the relative contribution of each baseline to the consumer. The mixing model described by Post is:
+
+alpha (i.e. the relative contribution of base 1 to the consumer) = (d13C of the consumer - d13C of base 2) / (d13C of base 1 - d13C of base 2)
+
+We can code this as:
+
+```{r}
+
+mm.data$PEL<-(mm.data$d13C - mm.data$d13Clit) / (mm.data$d13Cpel - mm.data$d13Clit)
+mm.data$PEL<-round(mm.data$PEL, digits=2)
+head(mm.data)
+
+resource.boxplot<-ggplot(subset(mm.data, Species == "perch" | Species == "lsr"), aes(x=Species, group = Species, y=PEL, colour=Species)) +
+                  geom_boxplot() +
+                  facet_grid(. ~ Lake) +
+                  theme_bw()
+resource.boxplot
+
+
+```
+
+Have you noticed the first problem yet? Some consumers fall outside the bounds of both endmember sources! Fopr simplicity sake we can correct these but putting eveything in a 0-1 range in a 'corrected resource use' column.
+
+```{r}
+
+mm.data$PELcorr<-mm.data$PEL
+mm.data$PELcorr[mm.data$PELcorr < 0]<-0
+mm.data$PELcorr[mm.data$PELcorr > 1]<-1
+head(mm.data)
+
+
+resource.boxplot<-ggplot(subset(mm.data, Species == "perch" | Species == "lsr"), aes(x=Species, group = Species, y=PELcorr, colour=Species)) +
+                  geom_boxplot() +
+                  facet_grid(. ~ Lake) +
+                  theme_bw()
+resource.boxplot
+
+
+
+```
+
+Congrations!! You just ran your first stable isotope mixing model, easy huh!
+
+In L. Kivi both species species assimialte predominantly littoral resources whereas in L. Vuotnis there are segregated along a pelagic-littoral axis. Why?
+
+
+##Trophic position
+The next component of this tutorial examines how we can estimate trophic position from carbon and nitrogen stable isotope data. Although there are more recent, sophisticated approaches to calculating this (for example https://github.com/clquezada/tRophicPosition) we will start from the begining and build off the model described by Post in 2002.
+
+TP = TP of baseline + (d15N of consumer - [(d15N of base 1 x contribution of base 1) + (d15N of base 2 x contribution of base 2) / fractionation of d15N])
+
+If we know that the baseline values are at trophic position 2, i.e. primary consumers, and we assume the fractionation of d15N is around 3.4 then we can estimate trophic position by:
+
+
+```{r}
+
+mm.data$TP<- 2 + (mm.data$d15N - (mm.data$d15Npel * mm.data$PELcorr + mm.data$d15Nlit * (1 - mm.data$PELcorr)))/3.4
+head(mm.data)
+
+TP.boxplot<-ggplot(subset(mm.data, Species == "perch" | Species == "lsr"), aes(x=Species, group = Species, y=TP, colour=Species)) +
+                  geom_boxplot() +
+                  facet_grid(. ~ Lake) +
+                  theme_bw()
+TP.boxplot
+
+```
+Note, if this is hard to follow break the formula down into individual chunks and work through step by step
+
+Now we can do something cool! We can plot isotope biplots but rather than displaying consumers isotope data we can display their resource use and trophci posiiton. This has several benfits, it is ecologically relevant and as we have accounted for baseline variability we can now cirectly compare data bteween systems.
+
+```{r}
+eco.biplots<-ggplot(mm.data, aes(x = PELcorr, y = TP, colour = Group, shape = Class)) +
+  geom_point(alpha = 0.7, size=2) +
+  facet_grid(. ~ Lake) +
+  theme_bw() +
+  xlab("Pelagic resource use") +
+  ylab("Trophic position")
+eco.biplots
+
+```
+
+How about when we focus on our species of interest?
+
+```{r}
+sp.eco.biplots<-ggplot(subset(mm.data, Species == "perch" | Species == "lsr"), aes(x = PELcorr, y = TP, colour = Species)) +
+  geom_point(alpha = 0.7, size=2) +
+  facet_grid(. ~ Lake) +
+  theme_bw() +
+  xlab("Pelagic resource use") +
+  ylab("Trophic position")
+sp.eco.biplots
+
+```
+
+*Discussion questions*
+
+What is the difference between perch populations?
+
+There is soemthing crucially wrong with these plots.... They suggest that whitefish and perch are approximately one trophic level higher in L. Kivi than in L. Vuontis but we know from experience that this isnt the case. What is causing the difference?

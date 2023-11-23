@@ -1,0 +1,45 @@
+mean_d_13C,mean_d_15N,mean_d_2H,sd_d_13C,sd_d_15N,sd_d_2H,organism,location,month,tissue
+-28.47,5.86,-124.5425029,NA,NA,NA,bluntnose minnow,lake,may,liver
+-27.92166667,6.06,-121.6352914,1.188064252,0.347044666,8.454170131,bluntnose minnow,lake,may,muscle
+-30.26,5.56,-145.0881997,NA,NA,NA,bluntnose minnow,lake,october,liver
+-27.96333333,5.936666667,-124.1752699,0.586884429,0.219393102,9.505821044,bluntnose minnow,lake,october,muscle
+-28.49,7.365,-111.14,0.282842712,0.473761543,7.721606051,common shiner,creek,august,muscle
+-31.708,5.038,-144.3865512,0.794430614,0.815487584,9.160970255,common shiner,creek,may,liver
+-29.50285714,6.081428571,-112.0357143,1.376368583,1.100127698,4.195933973,common shiner,creek,may,muscle
+-30.88,6.09,-145.63,NA,NA,NA,common shiner,lake,may,liver
+-28.83666667,6.556666667,-113.3966667,0.398789836,0.256969518,4.099516232,common shiner,lake,may,muscle
+-25.82,3.8,-107.72,NA,NA,NA,common shiner,lake,october,liver
+-30.71,4.985,-133.275,2.305168107,1.124299782,36.91804505,common shiner,lake,october,muscle
+-29.87333333,6.448333333,-129.4796516,1.692272634,0.872637764,15.0244125,creek chub,creek,may,liver
+-28.50333333,7.14,-110.8023554,1.429918413,0.607058482,6.109327722,creek chub,creek,may,muscle
+-29.105,7.705,-102.6925735,2.821356057,1.491995308,1.530990055,creek chub,creek,october,muscle
+-24.325,5.47,-100.6379623,2.821356057,0.593969696,18.43846304,creek chub,lake,august,liver
+-26.68,6.45,-113.1534421,NA,NA,NA,creek chub,lake,august,muscle
+-28.46,6.28,-114.204748,1.258650071,1.088944443,3.458108542,creek chub,lake,may,liver
+-28.57,7.28,-121.17,0.919238816,0.707106781,0.579827561,creek chub,lake,may,muscle
+-27.85,6.46,-104.2897129,NA,NA,NA,creek chub,lake,october,muscle
+-30.98285714,5.971428571,-128.3857143,1.827737347,0.99792165,11.83627033,golden shiner,creek,may,liver
+-29.95285714,7.015714286,-116.2471429,1.290267599,0.706985552,3.668686024,golden shiner,creek,may,muscle
+-28.26,4.75,-113.73,NA,NA,NA,golden shiner,lake,august,muscle
+-30.22333333,6.266666667,-118.6833333,0.901628157,0.113724814,5.832926652,golden shiner,lake,may,liver
+-28.84,6.3175,-114.6219336,0.756835517,0.228673712,3.927597715,golden shiner,lake,may,muscle
+-29.98,7.9,-120.93,NA,NA,NA,northern redbelly dace ,creek,august,muscle
+-30.0925,7.935,-108.825,0.637043955,0.446056798,2.25306458,northern redbelly dace ,creek,may,muscle
+-33.06,8.92,-152.77,NA,NA,NA,pearl dace,creek,august,liver
+-31.32,7.965,-109.6519155,0.410121933,0.530330086,1.171088331,pearl dace,creek,august,muscle
+-29.94,6.19,-109.99,NA,NA,NA,pearl dace,creek,may,liver
+-30.12,7.3225,-112.0125,1.058174529,1.115717258,3.98886262,pearl dace,creek,may,muscle
+-33.99,4.89,-179.12,NA,NA,NA,pearl dace,creek,october,liver
+-33.76,5.55,-126.04,NA,NA,NA,pearl dace,creek,october,muscle
+-29.11,7.41,-120.095,1.032375901,0.509116882,0.728319985,smallmouth bass,creek,may,liver
+-27.335,6.51,-113.925,0.643467171,0.070710678,3.952726907,smallmouth bass,creek,may,muscle
+-28.946,6.245,-120.361,1.042797519,0.443251872,5.494723631,smallmouth bass,lake,august,liver
+-27.563,7.074,-104.356275,1.191190348,0.527450893,6.888901677,smallmouth bass,lake,august,muscle
+-28.541,7.443,-115.6003103,1.2197855,0.635453469,4.354610734,smallmouth bass,lake,may,liver
+-27.117,7.695,-105.943,1.069995327,0.481692618,5.935744922,smallmouth bass,lake,may,muscle
+-31.33,5.975,-140.7692666,2.969848481,0.586898628,5.825522622,yellow perch,creek,august,liver
+-29.70333333,6.56,-99.3536914,2.489203353,0.216333077,8.947152441,yellow perch,creek,august,muscle
+-32.32,6.76,-118.6,NA,NA,NA,yellow perch,creek,october,liver
+-29.47,7.38,-111.79,NA,NA,NA,yellow perch,creek,october,muscle
+-29.88,4.3,-144.925,1.343502884,1.781909089,20.1454722,yellow perch,lake,october,liver
+-28.215,5.86,-114.72,0.6151829,0.848528137,8.527707781,yellow perch,lake,october,muscle
